@@ -1,0 +1,82 @@
+{
+    "transactions": [
+        {
+            "id": "tx_001",
+            "amount": 150.00,
+            "timestamp": "2024-01-01T10:00:00Z",
+            "merchant": "Grocery Store A",
+            "location": "New York",
+            "is_fraud": 0,
+            "features": {
+                "time_of_day": 10,
+                "day_of_week": 1,
+                "amount_category": "low",
+                "merchant_category": "retail"
+            }
+        },
+        {
+            "id": "tx_002",
+            "amount": 2500.00,
+            "timestamp": "2024-01-01T15:30:00Z",
+            "merchant": "Electronics Store B",
+            "location": "Los Angeles",
+            "is_fraud": 1,
+            "features": {
+                "time_of_day": 15,
+                "day_of_week": 1,
+                "amount_category": "high",
+                "merchant_category": "electronics"
+            }
+        },
+        {
+            "id": "tx_003",
+            "amount": 75.50,
+            "timestamp": "2024-01-02T09:15:00Z",
+            "merchant": "Coffee Shop C",
+            "location": "Chicago",
+            "is_fraud": 0,
+            "features": {
+                "time_of_day": 9,
+                "day_of_week": 2,
+                "amount_category": "low",
+                "merchant_category": "food"
+            }
+        },
+        {
+            "id": "tx_004",
+            "amount": 5000.00,
+            "timestamp": "2024-01-02T23:45:00Z",
+            "merchant": "Online Store D",
+            "location": "Remote",
+            "is_fraud": 1,
+            "features": {
+                "time_of_day": 23,
+                "day_of_week": 2,
+                "amount_category": "high",
+                "merchant_category": "online"
+            }
+        },
+        {
+            "id": "tx_005",
+            "amount": 200.00,
+            "timestamp": "2024-01-03T14:20:00Z",
+            "merchant": "Restaurant E",
+            "location": "Miami",
+            "is_fraud": 0,
+            "features": {
+                "time_of_day": 14,
+                "day_of_week": 3,
+                "amount_category": "medium",
+                "merchant_category": "food"
+            }
+        }
+    ],
+    "metadata": {
+        "total_transactions": 5,
+        "fraud_rate": 0.4,
+        "date_range": {
+            "start": "2024-01-01T10:00:00Z",
+            "end": "2024-01-03T14:20:00Z"
+        }
+    }
+} 

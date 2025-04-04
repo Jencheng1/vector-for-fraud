@@ -152,8 +152,39 @@ def plot_performance_metrics(metrics_df: pd.DataFrame):
         )
         st.plotly_chart(fig_fraud)
 
+def validate_db_connection(db_name: str, config: Dict[str, Any]) -> Dict[str, Any]:
+    """Validate connection to the specified database."""
+    try:
+        response = requests.post(
+            f"{API_URL}/validate/{db_name}",
+            json=config
+        )
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"status": "error", "message": response.json().get("detail", "Unknown error")}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
+def check_api_health() -> Dict[str, Any]:
+    """Check the health of the API and connected databases."""
+    try:
+        response = requests.get(f"{API_URL}/health")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            return {"status": "error", "message": response.json().get("detail", "Unknown error")}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
+
 def main():
     st.set_page_config(page_title="Fraud RAG Vector DB Evaluation", layout="wide")
+    
+    # Check API health at startup
+    health_status = check_api_health()
+    if health_status["status"] == "error":
+        st.error(f"API Health Check Failed: {health_status['message']}")
+        return
     
     st.title("Fraud RAG Vector Database Evaluation")
     
@@ -171,6 +202,39 @@ def main():
         # Remote database configuration
         st.subheader("Remote Database Configuration")
         
+        # Pinecone configuration
+        if "pinecone" in selected_dbs:
+            st.write("Pinecone Configuration")
+            pinecone_api_key = st.text_input("Pinecone API Key", type="password")
+            pinecone_environment = st.text_input("Pinecone Environment", value="gcp-starter")
+            pinecone_index = st.text_input("Pinecone Index Name", value="fraud-index")
+            
+            if pinecone_api_key and pinecone_environment and pinecone_index:
+                config = {
+                    "api_key": pinecone_api_key,
+                    "environment": pinecone_environment,
+                    "index_name": pinecone_index
+                }
+                
+                # Validate configuration
+                validation_result = validate_db_connection("pinecone", config)
+                if validation_result.get("status") == "error":
+                    st.error(f"Pinecone validation failed: {validation_result['message']}")
+                else:
+                    st.success("Pinecone configuration validated")
+                    st.json(validation_result.get("metrics", {}))
+                    
+                    # Configure database if validation passes
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/config",
+                            json={"db_name": "pinecone", "config": config}
+                        )
+                        if response.status_code == 200:
+                            st.success("Pinecone configured successfully")
+                    except Exception as e:
+                        st.error(f"Error configuring Pinecone: {str(e)}")
+            
         # Elasticsearch configuration
         if "elasticsearch" in selected_dbs:
             st.write("Elasticsearch Configuration")
@@ -178,17 +242,103 @@ def main():
             es_username = st.text_input("Elasticsearch Username", value="elastic")
             es_password = st.text_input("Elasticsearch Password", type="password")
             
+            if es_url and es_username and es_password:
+                config = {
+                    "url": es_url,
+                    "username": es_username,
+                    "password": es_password
+                }
+                
+                # Validate configuration
+                validation_result = validate_db_connection("elasticsearch", config)
+                if validation_result.get("status") == "error":
+                    st.error(f"Elasticsearch validation failed: {validation_result['message']}")
+                else:
+                    st.success("Elasticsearch configuration validated")
+                    st.json(validation_result.get("metrics", {}))
+                    
+                    # Configure database if validation passes
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/config",
+                            json={"db_name": "elasticsearch", "config": config}
+                        )
+                        if response.status_code == 200:
+                            st.success("Elasticsearch configured successfully")
+                    except Exception as e:
+                        st.error(f"Error configuring Elasticsearch: {str(e)}")
+            
         # Weaviate configuration
         if "weaviate" in selected_dbs:
             st.write("Weaviate Configuration")
             weaviate_url = st.text_input("Weaviate URL", value="http://localhost:8080")
             weaviate_api_key = st.text_input("Weaviate API Key", type="password")
             
+            if weaviate_url and weaviate_api_key:
+                config = {
+                    "url": weaviate_url,
+                    "api_key": weaviate_api_key
+                }
+                
+                # Validate configuration
+                validation_result = validate_db_connection("weaviate", config)
+                if validation_result.get("status") == "error":
+                    st.error(f"Weaviate validation failed: {validation_result['message']}")
+                else:
+                    st.success("Weaviate configuration validated")
+                    st.json(validation_result.get("metrics", {}))
+                    
+                    # Configure database if validation passes
+                    try:
+                        response = requests.post(
+                            f"{API_URL}/config",
+                            json={"db_name": "weaviate", "config": config}
+                        )
+                        if response.status_code == 200:
+                            st.success("Weaviate configured successfully")
+                    except Exception as e:
+                        st.error(f"Error configuring Weaviate: {str(e)}")
+        
         # Data generation settings
         st.subheader("Data Generation")
         n_samples = st.slider("Number of Samples", 10, 1000, 100)
         fraud_rate = st.slider("Fraud Rate (%)", 1, 20, 10) / 100
         
+        # Help section
+        with st.expander("Setup Help"):
+            st.markdown("""
+            ### Cloud Database Setup
+            
+            **Pinecone:**
+            1. Create account at [Pinecone.io](https://www.pinecone.io/)
+            2. Create a new index with dimension 128
+            3. Get API key and environment from console
+            
+            **Weaviate:**
+            1. Create account at [Weaviate Cloud](https://console.weaviate.io/)
+            2. Create a new cluster
+            3. Get cluster URL and API key
+            
+            **Elasticsearch:**
+            1. Create account at [Elastic Cloud](https://cloud.elastic.co/)
+            2. Create a new deployment
+            3. Get deployment URL and credentials
+            
+            ### Common Issues and Solutions
+            
+            **Connection Errors:**
+            - Check if your API keys are correct
+            - Verify network connectivity
+            - Ensure the service is running in your region
+            
+            **Performance Issues:**
+            - Check your service tier/plan
+            - Monitor resource usage
+            - Consider upgrading for better performance
+            
+            For more details, see the README.md file.
+            """)
+    
     # Main content
     st.header("Data Generation")
     
